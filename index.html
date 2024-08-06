@@ -129,7 +129,7 @@
     </style>
 
     <script type="module">
-        import {CreateMLCEngine} from "https://esm.run/@mlc-ai/web-llm";
+        import {CreateWebWorkerMLCEngine} from "https://esm.run/@mlc-ai/web-llm";
 
         const $ = el => document.querySelector(el)
 
@@ -142,19 +142,25 @@
         const $small = $('small')
 
         const messages = []
+        let loadEnded = false;
 
-        // const SELECTED_MODEL = "Llama-3.1-8B-Instruct-q4f32_1-MLC"
-        const SELECTED_MODEL = "SmolLM-360M-Instruct-q0f16-MLC"
+        // https://github.com/mlc-ai/web-llm/blob/main/src/config.ts#L293
+        const selectedModel = "Llama-3.1-8B-Instruct-q4f32_1-MLC"
+        // const selectedModel = "SmolLM-360M-Instruct-q0f16-MLC"
 
-        const engine = await CreateMLCEngine(
-            SELECTED_MODEL,
+        const engine = await CreateWebWorkerMLCEngine(
+            new Worker(new URL('/worker.js', import.meta.url), {type: 'module'}),
+            selectedModel,
             {
                 initProgressCallback: (info) => {
-                    // console.log(info)
                     $small.textContent = `${info.text}`
 
-                    if (info.progress === 1) {
+                    if (info.progress === 1 && !loadEnded) {
+                        loadEnded = true
                         $button.removeAttribute('disabled')
+
+                        addMessage("Hello! I'm your assistant. How can I assist you today?", "bot")
+                        $input.focus()
                     }
                 }
             }
@@ -169,7 +175,7 @@
             }
 
             addMessage(messageText, 'user')
-            $button.setAttribute('disabled', true)
+            $button.setAttribute('disabled', '')
 
             messages.push({
                 role: "user",
@@ -210,6 +216,8 @@
 
             $messages.appendChild($newMessage)
 
+            $container.scrollTop = $container.scrollHeight
+
             return $text
         }
 
@@ -220,32 +228,6 @@
 <body>
     <main>
         <ul>
-            <li class="message bot">
-                <span>
-                    User
-                </span>
-                <p>
-                    This is a very long answer.This is a very long answer.This is a very long answer.This is a very long
-                    answer.This is a very long answer.This is a very long answer.This is a very long answer.
-                </p>
-            </li>
-            <li class="message user">
-                <span>
-                    GPT
-                </span>
-                <p>
-                    This is a very long answer.This is a very long answer.This is a very long answer.This is a very long
-                    answer.This is a very long answer.This is a very long answer.This is a very long answer.
-                </p>
-            </li>
-            <li class="message bot">
-                <span>
-                    User
-                </span>
-                <p>
-                    Hello
-                </p>
-            </li>
         </ul>
     </main>
 
